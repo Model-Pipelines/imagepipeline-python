@@ -1,0 +1,59 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "imagepipeline"
+version = "0.2.0"
+description = "On-model imagery for fast brands. The image AI API for fashion and ecommerce."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = [
+    "ai", "image generation", "image editing", "virtual try-on",
+    "fashion", "ecommerce", "on-model", "background removal",
+    "imagepipeline", "sdk",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "requests>=2.28.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-mock>=3.10",
+    "responses>=0.23",
+    "mypy>=1.0",
+    "ruff>=0.1",
+]
+
+[project.urls]
+Homepage = "https://www.imagepipeline.io"
+Documentation = "https://docs.imagepipeline.io"
+"Book a demo" = "https://cal.com/imagepipeline/30min"
+Repository = "https://github.com/imagepipeline/imagepipeline-python"
+"Bug Tracker" = "https://github.com/imagepipeline/imagepipeline-python/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["imagepipeline"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+strict = true
