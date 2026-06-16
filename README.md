@@ -51,14 +51,33 @@ print(result.url)
 
 ### Background replacement
 
-Swap a flat studio background for any scene. The subject is automatically isolated — no masking required.
+Swap a flat studio background for any scene. The subject is automatically isolated — no masking required. Describe the subject so it's preserved cleanly.
 
 ```python
 result = ip.background.change(
     input_image="https://cdn.example.com/product-shot.jpg",
     prompt="minimal white marble surface, soft natural light",
+    subject_description="glass perfume bottle",
 )
 print(result.url)
+```
+
+### Background removal
+
+Cut out the subject as a transparent PNG, or recolor onto a flat background with an optional drop shadow.
+
+```python
+# Transparent cutout
+job = ip.background.remove(input_image="https://cdn.example.com/product.jpg")
+print(job.cutout_url)
+
+# Flat background + drop shadow
+job = ip.background.remove(
+    input_image="https://cdn.example.com/product.jpg",
+    recolor="#FFFFFF",
+    drop_shadow=True,
+)
+print(job.url)
 ```
 
 ### On-model image generation
@@ -194,9 +213,11 @@ except APIError as e:
 | `ip.generate` | `.speech(text, ...)` | Text-to-speech |
 | `ip.generate` | `.generate_3d(image_path, ...)` | Image-to-3D mesh |
 | `ip.edit` | `.image(prompt, input_image, ...)` | Instruction-based image editing |
-| `ip.background` | `.change(input_image, prompt, ...)` | Background replacement |
-| `ip.upscale` | `.image(input_image, ...)` | AI image enhancement |
-| `ip.branding` | `.logo(prompt, ...)` | Branded image generation |
+| `ip.background` | `.change(input_image, prompt, subject_description, ...)` | Background replacement |
+| `ip.background` | `.remove(input_image, recolor=None, ...)` | Background removal / cutout |
+| `ip.upscale` | `.image(input_image, scale=4, ...)` | AI image enhancement / upscale |
+| `ip.branding` | `.logo(input_image, logo_url, ...)` | Stamp a logo onto an image |
+| `ip.branding` | `.template(input_image, ...)` | Brand Scene Composer (palette-matched background) |
 | `ip.upload` | `.image(file)` | Upload an image, receive a URL |
 | `ip.segment` | `.image(image_url)` | Detect segments for targeted editing |
 | `ip.identity` | `.tryon(person_image, clothing_image, ...)` | Virtual try-on |

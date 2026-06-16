@@ -168,6 +168,8 @@ class IdentityResource:
         width: int = 768,
         height: int = 1024,
         seed: Optional[int] = None,
+        output_format: str = "webp",
+        negative_prompt: Optional[str] = None,
         profile_id: Optional[str] = None,
         callback_url: Optional[str] = None,
         wait: bool = True,
@@ -177,9 +179,11 @@ class IdentityResource:
         Args:
             face_image: Public URL of the reference face image.
             prompt: Description of the desired scene / outfit.
-            width: Output width in pixels (default 768).
-            height: Output height in pixels (default 1024).
+            width: Output width in pixels (default 768, max 2048).
+            height: Output height in pixels (default 1024, max 2048).
             seed: Reproducibility seed (None for random).
+            output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
+            negative_prompt: Things to avoid in the output.
             profile_id: Optional identity profile ID.
             callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
             wait: Poll until complete if True.
@@ -189,9 +193,12 @@ class IdentityResource:
             "prompt": prompt,
             "width": width,
             "height": height,
+            "output_format": output_format,
         }
         if seed is not None:
             body["seed"] = seed
+        if negative_prompt:
+            body["negative_prompt"] = negative_prompt
         if profile_id:
             body["profile_id"] = profile_id
         if callback_url:

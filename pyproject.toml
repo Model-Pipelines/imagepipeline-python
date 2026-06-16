@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "imagepipeline"
-version = "0.2.0"
+version = "0.3.0"
 description = "On-model imagery for fast brands. The image AI API for fashion and ecommerce."
 readme = "README.md"
 requires-python = ">=3.9"
@@ -44,8 +44,8 @@ dev = [
 Homepage = "https://www.imagepipeline.io"
 Documentation = "https://docs.imagepipeline.io"
 "Book a demo" = "https://cal.com/imagepipeline/30min"
-Repository = "https://github.com/imagepipeline/imagepipeline-python"
-"Bug Tracker" = "https://github.com/imagepipeline/imagepipeline-python/issues"
+Repository = "https://github.com/Model-Pipelines/imagepipeline-python"
+"Bug Tracker" = "https://github.com/Model-Pipelines/imagepipeline-python/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["imagepipeline"]

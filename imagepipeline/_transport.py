@@ -19,7 +19,7 @@ from .models import Job, JobStatus
 _DEFAULT_BASE_URL = "https://api.imagepipeline.io"
 _DEFAULT_POLL_INTERVAL = 3  # seconds
 _DEFAULT_TIMEOUT = 300  # seconds
-_SDK_VERSION = "0.2.0"
+_SDK_VERSION = "0.3.0"
 
 
 class _Transport:

@@ -22,6 +22,8 @@ class GenerateResource:
         output_format: str = "webp",
         num_inference_steps: Optional[int] = None,
         guidance_scale: Optional[float] = None,
+        enhance_prompt: bool = False,
+        logo_url: Optional[str] = None,
         profile_id: Optional[str] = None,
         callback_url: Optional[str] = None,
         wait: bool = True,
@@ -34,8 +36,11 @@ class GenerateResource:
             height: Output height in pixels (max 1024).
             seed: Reproducibility seed (-1 for random).
             output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
-            num_inference_steps: Diffusion steps (default 9). Higher = slower but sharper.
+            num_inference_steps: Diffusion steps (default 8). Higher = slower but sharper.
             guidance_scale: CFG scale. Leave unset to use the model default (0.0 for Z-Image Turbo).
+            enhance_prompt: Run the prompt through a lightweight AI enhancer before generation.
+                            Expands terse prompts into detailed visual descriptions. Adds ~1–2 s.
+            logo_url: Public URL of your company logo (PNG/WebP). Stamped at bottom-right at 50% opacity.
             profile_id: Identity profile ID — applies the profile's prompt template and quality settings.
             callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
             wait: If True (default), poll until complete and return a finished Job.
@@ -47,11 +52,14 @@ class GenerateResource:
             "height": height,
             "seed": seed,
             "output_format": output_format,
+            "enhance_prompt": enhance_prompt,
         }
         if num_inference_steps is not None:
             body["num_inference_steps"] = num_inference_steps
         if guidance_scale is not None:
             body["guidance_scale"] = guidance_scale
+        if logo_url:
+            body["logo_url"] = logo_url
         if profile_id:
             body["profile_id"] = profile_id
         if callback_url:

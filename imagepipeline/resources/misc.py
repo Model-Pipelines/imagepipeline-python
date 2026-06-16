@@ -121,6 +121,15 @@ class BackgroundResource:
         *,
         input_image: str,
         prompt: str,
+        subject_description: str,
+        use_segmentation: bool = True,
+        tone_correction: Optional[float] = None,
+        has_text: Optional[bool] = None,
+        palette: Optional[List[str]] = None,
+        num_inference_steps: Optional[int] = None,
+        true_cfg_scale: Optional[float] = None,
+        faster_inference: Optional[bool] = None,
+        harmonize_strength: Optional[float] = None,
         seed: int = -1,
         output_format: str = "webp",
         callback_url: Optional[str] = None,
@@ -134,6 +143,22 @@ class BackgroundResource:
         Args:
             input_image: Public URL of the source image.
             prompt: Description of the new background or scene.
+            subject_description: Short description of the main subject to preserve —
+                                 e.g. ``'person'``, ``'glass bottle'``, ``'sneakers'``.
+                                 Helps the segmentation model identify what to keep.
+            use_segmentation: Isolate the subject and composite it back over the new
+                              background (default True). Preserves subject edges cleanly.
+            tone_correction: Colour correction strength (0.0–1.0). Blends the generated
+                             background colour toward the original to reduce drift.
+            has_text: Whether the image contains visible text/labels. Set ``False`` to
+                      skip text detection and save ~2–3 s. Omit to auto-detect.
+            palette: Brand colour palette as hex codes blended into the background.
+            num_inference_steps: Diffusion steps (default 8).
+            true_cfg_scale: CFG scale (default 4.0).
+            faster_inference: Enable faster inference mode (default True).
+            harmonize_strength: Lighting harmonization strength (0.0–1.0). Shifts the
+                                subject's low-frequency lighting to match the generated
+                                background. ``0.7`` is a good starting point. Omit to disable.
             seed: Reproducibility seed (-1 for random).
             output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
             callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
@@ -142,12 +167,83 @@ class BackgroundResource:
         body: dict = {
             "input_image": input_image,
             "prompt": prompt,
+            "subject_description": subject_description,
+            "use_segmentation": use_segmentation,
             "seed": seed,
             "output_format": output_format,
         }
+        if tone_correction is not None:
+            body["tone_correction"] = tone_correction
+        if has_text is not None:
+            body["has_text"] = has_text
+        if palette:
+            body["palette"] = palette
+        if num_inference_steps is not None:
+            body["num_inference_steps"] = num_inference_steps
+        if true_cfg_scale is not None:
+            body["true_cfg_scale"] = true_cfg_scale
+        if faster_inference is not None:
+            body["faster_inference"] = faster_inference
+        if harmonize_strength is not None:
+            body["harmonize_strength"] = harmonize_strength
         if callback_url:
             body["callback_url"] = callback_url
         endpoint = "background/change/image/v1"
+        return self._t.submit_and_poll(endpoint, body) if wait else self._t.submit(endpoint, body)
+
+    def remove(
+        self,
+        *,
+        input_image: str,
+        recolor: Optional[str] = None,
+        drop_shadow: bool = False,
+        shadow_opacity: float = 0.38,
+        shadow_blur: float = 0.018,
+        shadow_dy: float = 0.022,
+        shadow_dx: float = 0.004,
+        output_format: str = "png",
+        callback_url: Optional[str] = None,
+        wait: bool = True,
+    ) -> Job:
+        """Remove the background from an image using BiRefNet.
+
+        Always returns a transparent PNG cutout (``job.cutout_url``). When
+        ``recolor`` is provided, also returns a flat-background composite
+        (``job.url`` / ``job.result_url``).
+
+        Args:
+            input_image: Public URL of the image to process.
+            recolor: Hex colour for the new background, e.g. ``'#FFFFFF'`` or ``'F0F0F0'``.
+                     When omitted only the transparent cutout is returned.
+            drop_shadow: Add a soft drop shadow beneath the subject before compositing.
+                         Requires ``recolor``.
+            shadow_opacity: Shadow darkness (0.0–1.0, default 0.38).
+            shadow_blur: Blur radius as a fraction of image width (default 0.018).
+            shadow_dy: Vertical shadow offset as a fraction of image height (default 0.022).
+            shadow_dx: Horizontal shadow offset as a fraction of image width (default 0.004).
+            output_format: Output format for composited result — ``'png'`` (default), ``'webp'``, or ``'jpeg'``.
+            callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
+            wait: Poll until complete if True.
+
+        Returns:
+            :class:`Job` with ``cutout_url`` set (transparent PNG) and ``result_url`` set
+            when ``recolor`` was provided.
+        """
+        body: dict = {
+            "input_image": input_image,
+            "drop_shadow": drop_shadow,
+            "output_format": output_format,
+        }
+        if recolor:
+            body["recolor"] = recolor
+        if drop_shadow:
+            body["shadow_opacity"] = shadow_opacity
+            body["shadow_blur"] = shadow_blur
+            body["shadow_dy"] = shadow_dy
+            body["shadow_dx"] = shadow_dx
+        if callback_url:
+            body["callback_url"] = callback_url
+        endpoint = "background/remove/image/v1"
         return self._t.submit_and_poll(endpoint, body) if wait else self._t.submit(endpoint, body)
 
 
@@ -158,43 +254,92 @@ class BrandingResource:
     def logo(
         self,
         *,
-        prompt: str,
-        logo_url: Optional[str] = None,
-        palette: Optional[List[str]] = None,
-        width: int = 1024,
-        height: int = 1024,
-        seed: int = -1,
+        input_image: str,
+        logo_url: str,
+        position: str = "bottom_right",
         output_format: str = "webp",
         callback_url: Optional[str] = None,
         wait: bool = True,
     ) -> Job:
-        """Generate a branded logo / hero image.
+        """Stamp your company logo onto an existing image.
+
+        Downloads ``input_image``, overlays ``logo_url`` at the chosen corner
+        at a small pixel size and 50% opacity. Pure image compositing — no GPU
+        required, typically completes in 1–2 s.
 
         Args:
-            prompt: Description of the desired image.
-            logo_url: Public URL of your company logo (PNG/WebP). Stamped at bottom-right.
-            palette: Brand colour palette as hex codes (e.g. ``['#FF5733', '#3498DB']``).
-            width: Output width in pixels (max 1024).
-            height: Output height in pixels (max 1024).
-            seed: Reproducibility seed (-1 for random).
+            input_image: Public URL of the base image to stamp the logo onto.
+            logo_url: Public URL of your logo (PNG with transparency recommended).
+            position: Corner placement — ``'bottom_right'`` (default), ``'bottom_left'``,
+                      ``'top_right'``, or ``'top_left'``.
             output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
             callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
             wait: Poll until complete if True.
         """
         body: dict = {
-            "prompt": prompt,
-            "width": width,
-            "height": height,
-            "seed": seed,
+            "input_image": input_image,
+            "logo_url": logo_url,
+            "position": position,
             "output_format": output_format,
         }
-        if logo_url:
-            body["logo_url"] = logo_url
-        if palette:
-            body["palette"] = palette
         if callback_url:
             body["callback_url"] = callback_url
         endpoint = "branding/logo/image/v1"
+        return self._t.submit_and_poll(endpoint, body) if wait else self._t.submit(endpoint, body)
+
+    def template(
+        self,
+        *,
+        input_image: str,
+        background_prompt: str = "clean professional studio background",
+        palette_mode: str = "similar",
+        subject_description: Optional[str] = None,
+        logo_url: Optional[str] = None,
+        position: str = "bottom_right",
+        output_format: str = "webp",
+        seed: int = -1,
+        callback_url: Optional[str] = None,
+        wait: bool = True,
+    ) -> Job:
+        """Brand Scene Composer — derive a palette from your photo and generate a matching background.
+
+        Automatically extracts the dominant clothing/accessory colours from
+        ``input_image``, transforms them by ``palette_mode``, and drives a
+        background swap. Optionally stamps your logo at a chosen corner.
+
+        Args:
+            input_image: Public URL of your model or product photo. The brand palette
+                         is extracted from the clothing and accessories automatically.
+            background_prompt: Describe the background scene, e.g. ``'urban rooftop at dusk'``.
+                               The derived palette colours are automatically injected.
+            palette_mode: How the background palette relates to the outfit colours:
+                          ``'similar'`` (same hue family, harmonious),
+                          ``'complementary'`` (opposite on the colour wheel),
+                          or ``'radical'`` (triadic shift, bold and eye-catching).
+            subject_description: Short description of the subject to preserve, e.g. ``'woman in red dress'``.
+            logo_url: Public URL of your logo (PNG with transparency). Stamped at ``position`` after generation.
+            position: Corner for the logo stamp — ``'bottom_right'`` (default), ``'bottom_left'``,
+                      ``'top_right'``, or ``'top_left'``.
+            output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
+            seed: Reproducibility seed (-1 for random).
+            callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
+            wait: Poll until complete if True.
+        """
+        body: dict = {
+            "input_image": input_image,
+            "background_prompt": background_prompt,
+            "palette_mode": palette_mode,
+            "position": position,
+            "output_format": output_format,
+            "seed": seed,
+        }
+        if subject_description:
+            body["subject_description"] = subject_description
+        if logo_url:
+            body["logo_url"] = logo_url
+        if callback_url:
+            body["callback_url"] = callback_url
+        endpoint = "branding/template/image/v1"
         return self._t.submit_and_poll(endpoint, body) if wait else self._t.submit(endpoint, body)
 
 
@@ -205,36 +350,26 @@ class UpscaleResource:
     def image(
         self,
         *,
-        input_image: Optional[str] = None,
-        width: int = 1024,
-        height: int = 1024,
-        seed: int = -1,
+        input_image: str,
+        scale: int = 4,
         output_format: str = "webp",
         callback_url: Optional[str] = None,
         wait: bool = True,
     ) -> Job:
-        """Enhance image quality using the upscale LoRA.
-
-        Pass the same ``width`` and ``height`` as the source to improve quality
-        without changing resolution. Increase them to upscale.
+        """Enhance and upscale an image to higher resolution.
 
         Args:
             input_image: Public URL of the image to upscale / enhance.
-            width: Target width in pixels.
-            height: Target height in pixels.
-            seed: Reproducibility seed (-1 for random).
+            scale: Upscale factor — ``1`` (enhance-only), ``2``, ``3``, or ``4`` (default).
             output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
             callback_url: Webhook URL. We POST a ``WebhookEvent`` on completion.
             wait: Poll until complete if True.
         """
         body: dict = {
-            "width": width,
-            "height": height,
-            "seed": seed,
+            "input_image": input_image,
+            "scale": scale,
             "output_format": output_format,
         }
-        if input_image:
-            body["input_image"] = input_image
         if callback_url:
             body["callback_url"] = callback_url
         endpoint = "upscale/image/v1"
