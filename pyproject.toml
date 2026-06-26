@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "imagepipeline"
-version = "0.3.0"
+version = "0.4.0"
 description = "On-model imagery for fast brands. The image AI API for fashion and ecommerce."
 readme = "README.md"
 requires-python = ">=3.9"

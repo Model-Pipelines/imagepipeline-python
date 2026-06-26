@@ -18,6 +18,12 @@ Requires Python 3.9+ and a free API key from [imagepipeline.io](https://www.imag
 
 ---
 
+## Building an AI agent?
+
+There's a standalone **MCP server** — published separately as [`@imagepipeline/mcp`](https://www.npmjs.com/package/@imagepipeline/mcp) (Node) — that exposes ImagePipeline as agent tools for Claude Desktop, Claude Code, or any [MCP](https://modelcontextprotocol.io) client. It's a separate tool, independent of this Python package; see its [README](https://www.npmjs.com/package/@imagepipeline/mcp) to set it up.
+
+---
+
 ## Quick start
 
 ```python
@@ -199,7 +205,9 @@ except JobFailedError as e:
 except JobTimeoutError as e:
     print(f"Timed out after {e.timeout}s")
 except APIError as e:
-    print(f"HTTP {e.status_code}")
+    # e.error_code is the stable machine-readable code, e.g. "INSUFFICIENT_BALANCE",
+    # "INVALID_PARAMETERS", "NOT_FOUND" — use it for programmatic handling.
+    print(f"HTTP {e.status_code} ({e.error_code}): {e}")
 ```
 
 ---

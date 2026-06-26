@@ -40,6 +40,9 @@ class JobTimeoutError(ImagePipelineError):
 class APIError(ImagePipelineError):
     """Unexpected HTTP error from the API."""
 
-    def __init__(self, status_code: int, message: str):
+    def __init__(self, status_code: int, message: str, error_code: str | None = None):
         super().__init__(f"HTTP {status_code}: {message}")
         self.status_code = status_code
+        # Stable machine-readable code from the API body, e.g. "INVALID_PARAMETERS",
+        # "INSUFFICIENT_BALANCE", "NOT_FOUND". None if the body had no error_code.
+        self.error_code = error_code

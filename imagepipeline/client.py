@@ -86,3 +86,8 @@ class ImagePipeline:
         self.upscale = UpscaleResource(self._transport)
         self.upload = UploadResource(self._transport)
         self.segment = SegmentResource(self._transport)
+
+    def account(self) -> dict:
+        """Fetch the current account: plan, remaining balance, and the operations this
+        API key is allowed to use. Useful as a preflight check before expensive calls."""
+        return self._transport.get("/v1/user/details")

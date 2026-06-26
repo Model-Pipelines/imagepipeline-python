@@ -53,9 +53,9 @@ class EditResource:
             output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
             num_inference_steps: Diffusion steps (1–100).
             guidance_scale: Classifier-free guidance scale (0.0–20.0).
-            refine_strength: Z-Image refinement pass strength (0.0–1.0).
+            refine_strength: Refinement pass strength (0.0–1.0).
                              Values of 0.15–0.30 improve skin and texture without changing composition.
-            faster_inference: ``True`` (default) uses Lightning LoRA for 8-step inference.
+            faster_inference: ``True`` (default) uses a distilled model for 8-step inference.
                               ``False`` runs full 20-step inference for higher quality.
             cfg_norm_strength: CFG normalisation strength (0.0–1.0). Reduces colour saturation
                                from high guidance. Try 0.7–0.9 if colours look oversaturated.
@@ -205,7 +205,7 @@ class BackgroundResource:
         callback_url: Optional[str] = None,
         wait: bool = True,
     ) -> Job:
-        """Remove the background from an image using BiRefNet.
+        """Remove the background from an image.
 
         Always returns a transparent PNG cutout (``job.cutout_url``). When
         ``recolor`` is provided, also returns a flat-background composite

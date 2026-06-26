@@ -28,7 +28,7 @@ class GenerateResource:
         callback_url: Optional[str] = None,
         wait: bool = True,
     ) -> Job:
-        """Generate an image from a text prompt using Z-Image Turbo.
+        """Generate an image from a text prompt.
 
         Args:
             prompt: Text description of the image to generate.
@@ -37,7 +37,7 @@ class GenerateResource:
             seed: Reproducibility seed (-1 for random).
             output_format: ``'webp'`` (default), ``'jpeg'``, or ``'png'``.
             num_inference_steps: Diffusion steps (default 8). Higher = slower but sharper.
-            guidance_scale: CFG scale. Leave unset to use the model default (0.0 for Z-Image Turbo).
+            guidance_scale: CFG scale. Leave unset to use the model default (0.0).
             enhance_prompt: Run the prompt through a lightweight AI enhancer before generation.
                             Expands terse prompts into detailed visual descriptions. Adds ~1–2 s.
             logo_url: Public URL of your company logo (PNG/WebP). Stamped at bottom-right at 50% opacity.

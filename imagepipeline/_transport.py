@@ -19,7 +19,7 @@ from .models import Job, JobStatus
 _DEFAULT_BASE_URL = "https://api.imagepipeline.io"
 _DEFAULT_POLL_INTERVAL = 3  # seconds
 _DEFAULT_TIMEOUT = 300  # seconds
-_SDK_VERSION = "0.3.0"
+_SDK_VERSION = "0.4.0"
 
 
 class _Transport:
@@ -58,20 +58,38 @@ class _Transport:
         )
         return self._handle(resp)
 
+    @staticmethod
+    def _parse_error(resp: _requests.Response) -> tuple[str, Optional[str]]:
+        """Extract (message, error_code) from the structured API error body.
+
+        The API returns ``{"error", "error_code", "message", ...}`` at the top level.
+        Falls back to the legacy ``detail`` key and then the raw body text.
+        """
+        message: Optional[str] = None
+        error_code: Optional[str] = None
+        try:
+            data = resp.json()
+            if isinstance(data, dict):
+                message = data.get("message") or data.get("error") or data.get("detail")
+                error_code = data.get("error_code")
+        except Exception:
+            pass
+        if not message:
+            message = resp.text or f"HTTP {resp.status_code}"
+        return str(message), error_code
+
     def _handle(self, resp: _requests.Response) -> dict:
         if resp.status_code == 401:
-            raise AuthenticationError("Invalid or missing API key.")
+            message, _ = self._parse_error(resp)
+            raise AuthenticationError(message or "Invalid or missing API key.")
         if resp.status_code == 429:
             retry_after = int(resp.headers.get("Retry-After", 60))
             raise RateLimitError("Rate limit exceeded.", retry_after=retry_after)
         if resp.status_code == 204:
             return {}
         if not resp.ok:
-            try:
-                detail = resp.json().get("detail") or resp.text
-            except Exception:
-                detail = resp.text
-            raise APIError(resp.status_code, detail)
+            message, error_code = self._parse_error(resp)
+            raise APIError(resp.status_code, message, error_code=error_code)
         return resp.json()
 
     def submit_and_poll(
